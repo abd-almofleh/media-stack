@@ -1,0 +1,285 @@
+Reference Video Guide: https://youtu.be/N--e1O5SqPw
+
+https://MediaStack.Guide
+https://github.com/geekau/mediastack
+https://docs.docker.com/engine/install/ubuntu/
+https://github.com/winsw/winsw
+
+
+
+
+#######################################################################################
+#     INSTALL VIRTUALISATION PRE-REQUISITES AND WINDOWS SUBSYSTEM FOR LINUX (WSL)     #
+#######################################################################################
+
+# OPEN COMMAND PROMPT (ADMINISTRATOR)
+
+dism /online /enable-feature  /featurename:microsoft-windows-subsystem-linux /all /norestart
+dism /online /enable-feature  /featurename:virtualmachineplatform /all /norestart
+dism /online /enable-feature  /featurename:hypervisorplatform /all /norestart
+dism /online /disable-feature /featurename:microsoft-hyper-v /norestart
+
+wsl --install
+wsl --update
+wsl --set-default-version 2
+
+shutdown /r /t 1
+
+
+# OPEN COMMAND PROMPT (ADMINISTRATOR)
+
+wsl --install -d ubuntu
+wsl --status
+
+
+
+
+#######################################################################################
+#                 CREATE DOCKER USER AND UPDATE UBUNTU DISTRIBUTION                   #
+#######################################################################################
+
+# OPEN UBUNTU AND CREATE NEW USER
+
+# Username: ubuntu
+# Password: ubuntu
+
+sudo apt clean all
+sudo apt update
+sudo apt dist-upgrade -y
+sudo apt autoremove -y
+
+
+
+
+#######################################################################################
+#              INSTALL DOCKER USING OFFICIAL DOCUMENTATION AND REPOS                  #
+#######################################################################################
+
+# Google:    install docker ubuntu
+# Or Goto:   https://docs.docker.com/engine/install/ubuntu/
+
+
+# UNINSTALL OLD DOCKER VERSIONS
+for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do sudo apt-get remove $pkg; done
+
+
+# UNINSTALL DOCKER ENGINE
+sudo apt-get purge docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin docker-ce-rootless-extras
+sudo rm -rf /var/lib/docker
+sudo rm -rf /var/lib/containerd
+sudo rm /etc/apt/sources.list.d/docker.list
+sudo rm /etc/apt/keyrings/docker.asc
+
+
+# ADD DOCKER'S OFFICIAL GPG KEY:
+sudo apt-get update
+sudo apt-get install ca-certificates curl
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+
+# ADD THE REPOSITORY TO APT SOURCES:
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}") stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt-get update
+
+sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+
+
+
+#######################################################################################
+#              DELETE DOCKER IMAGES / CONTAINERS / NETWORKS / DOCKER CONFIG           #
+#######################################################################################
+
+
+sudo docker stop $(sudo docker ps -a -q)
+sudo docker rm   $(sudo docker ps -a -q)
+sudo docker container  prune -f
+sudo docker image      prune -a -f
+sudo docker volume     prune -f
+sudo docker network    prune -f
+
+
+
+
+#######################################################################################
+#    CONFIGURATION VARIABLES / SETTINGS FOR THIS DEMO - CHANGE TO SUIT YOUR NEEDS     #
+#######################################################################################
+
+# This tutorial will show you how to set up the following folders
+
+# FOLDER_FOR_MEDIA=/mnt/d/MediaStack/Media      We will store all media in this location
+# FOLDER_FOR_DATA=/mnt/d/MediaStack/AppData     We will store all Docker configurations here
+
+mkdir D:\MediaStack\Media
+mkdir D:\MediaStack\AppData
+
+
+
+
+#####################################################################################
+#                   FOLLOW MEDIASTACK GUIDE FROM GITHUB REPO                        #
+#####################################################################################
+
+# Goto:   https://github.com/geekau/mediastack
+
+# Download YAML / ENV files into D:/MediaStack/AppData directory
+
+# Edit docker-compose.env file
+
+#### Create MediaStack working directories
+
+export FOLDER_FOR_MEDIA=/mnt/d/MediaStack/Media
+export FOLDER_FOR_DATA=/mnt/d/MediaStack/AppData
+
+export PUID=1000
+export PGID=1000
+
+sudo -E mkdir -p $FOLDER_FOR_DATA/{authelia/assets,bazarr,ddns-updater,gluetun,heimdall,homarr/{configs,data,icons},homepage,jellyfin,jellyseerr,lidarr,mylar,plex,portainer,prowlarr,qbittorrent,radarr,readarr,sabnzbd,sonarr,swag,tdarr/{server,configs,logs},tdarr_transcode_cache,unpackerr,whisparr}
+sudo -E mkdir -p $FOLDER_FOR_MEDIA/media/{anime,audio,books,comics,movies,music,photos,tv,xxx}
+sudo -E mkdir -p $FOLDER_FOR_MEDIA/usenet/{anime,audio,books,comics,complete,console,incomplete,movies,music,prowlarr,software,tv,xxx}
+sudo -E mkdir -p $FOLDER_FOR_MEDIA/torrents/{anime,audio,books,comics,complete,console,incomplete,movies,music,prowlarr,qbittorrent,software,tv,xxx}
+sudo -E mkdir -p $FOLDER_FOR_MEDIA/watch
+sudo -E mkdir -p $FOLDER_FOR_MEDIA/filebot/{input,output}
+sudo -E chmod -R 775 $FOLDER_FOR_MEDIA $FOLDER_FOR_DATA
+sudo -E chown -R $PUID:$PGID $FOLDER_FOR_MEDIA $FOLDER_FOR_DATA
+
+
+
+# Download all of the Docker images needed for each YAML file
+for file in *.yaml; do
+  echo "Pulling Docker image for $file..."
+  sudo docker compose --file "$file" --env-file docker-compose.env pull
+done
+
+
+
+# GLUETUN MUST BE THE FIRST CONTAINER CREATED - IT SETS UP DOCKER NETWORK AND VPN
+sudo docker compose --file docker-compose-gluetun.yaml      --env-file docker-compose.env up -d
+
+
+sudo docker compose --file docker-compose-qbittorrent.yaml  --env-file docker-compose.env up -d
+sudo docker compose --file docker-compose-sabnzbd.yaml      --env-file docker-compose.env up -d
+
+sudo docker compose --file docker-compose-prowlarr.yaml     --env-file docker-compose.env up -d
+sudo docker compose --file docker-compose-lidarr.yaml       --env-file docker-compose.env up -d
+sudo docker compose --file docker-compose-mylar.yaml        --env-file docker-compose.env up -d
+sudo docker compose --file docker-compose-radarr.yaml       --env-file docker-compose.env up -d
+sudo docker compose --file docker-compose-readarr.yaml      --env-file docker-compose.env up -d
+sudo docker compose --file docker-compose-sonarr.yaml       --env-file docker-compose.env up -d
+sudo docker compose --file docker-compose-whisparr.yaml     --env-file docker-compose.env up -d
+sudo docker compose --file docker-compose-bazarr.yaml       --env-file docker-compose.env up -d
+
+sudo docker compose --file docker-compose-jellyfin.yaml     --env-file docker-compose.env up -d
+sudo docker compose --file docker-compose-jellyseerr.yaml   --env-file docker-compose.env up -d
+
+sudo docker compose --file docker-compose-homarr.yaml       --env-file docker-compose.env up -d
+sudo docker compose --file docker-compose-homepage.yaml     --env-file docker-compose.env up -d
+sudo docker compose --file docker-compose-heimdall.yaml     --env-file docker-compose.env up -d
+
+sudo docker compose --file docker-compose-flaresolverr.yaml --env-file docker-compose.env up -d
+sudo docker compose --file docker-compose-unpackerr.yaml    --env-file docker-compose.env up -d
+sudo docker compose --file docker-compose-tdarr.yaml        --env-file docker-compose.env up -d
+
+sudo docker compose --file docker-compose-portainer.yaml    --env-file docker-compose.env up -d
+sudo docker compose --file docker-compose-filebot.yaml      --env-file docker-compose.env up -d
+
+sudo docker compose --file docker-compose-swag.yaml         --env-file docker-compose.env up -d
+sudo docker compose --file docker-compose-authelia.yaml     --env-file docker-compose.env up -d
+sudo docker compose --file docker-compose-ddns-updater.yaml --env-file docker-compose.env up -d
+
+
+
+
+#####################################################################################
+#                    SETTING WSL TO RUN AS WINDOWS SERVICE                          #
+#####################################################################################
+
+###
+### WARNING - WSL - WILL NOT run as System Service, it must be run with general user account details, which MUST have a password on the account.
+###
+
+# Download Windows Service Wrapper - https://github.com/winsw/winsw/releases
+# Copy WinSW-x64.exe to D:\MediaStack and rename "wsl-monitoring.exe"
+# Create and edit D:\MediaStack\wsl-monitoring.xml
+
+D:
+cd D:\MediaStack
+
+# EDIT wsl-monitoring.xml
+
+<service>
+  <id>wsl-monitoring</id>
+  <name>WSL Monitoring Service</name>
+  <description>This service checks if WSL is running on system start up, and ensures the service remains active for WSL projects to run as services.</description>
+  <executable>C:\Program Files\WSL\wsl.exe</executable>
+  <startarguments>-d ubuntu</startarguments>
+  <priority>Normal</priority>
+  <stoptimeout>30 sec</stoptimeout>
+  <stopparentprocessfirst>true</stopparentprocessfirst>
+  <startmode>Automatic</startmode>
+  <depend>Eventlog</depend>
+  <waithint>30 sec</waithint>
+  <sleeptime>1 sec</sleeptime>
+</service>
+
+
+# Install Windows Service Wrapper
+
+wsl-monitoring install
+
+# Open Services and change WSL Monitoring to run as your user credentials
+
+wsl-monitoring start
+
+##### - Windows service will fail if there is now password on the Windows user account
+
+
+#####################################################################################
+#          DOWNLOAD LATEST DOCKER IMAGES AND UPDATE ALL RUNNING CONTAINERS          #
+#####################################################################################
+
+
+# Download all of the Docker images needed for each YAML file
+for file in *.yaml; do
+  echo "Pulling Docker image for $file..."
+  sudo docker compose --file "$file" --env-file docker-compose.env pull
+done
+
+
+# Start Gluetun container first, then start all other MediaStack containers
+sudo docker compose --file docker-compose-gluetun.yaml --env-file docker-compose.env up -d --force-recreate
+for file in *.yaml; do
+  if [[ "$file" != "docker-compose-gluetun.yaml" ]]; then
+    echo "Recreating Docker container for $file..."
+    sudo docker compose --file "$file" --env-file docker-compose.env up -d --force-recreate
+  fi
+done
+
+
+
+
+#####################################################################################
+#                               WHAT TO DO NEXT?                                    #
+#####################################################################################
+
+
+Import the Bookmarks for the application into your web browser
+
+Before adding media to /mediastack/media folders:
+
+	Use Filebot to organise and rename your media (Optional)
+	Set up the file naming standards in the media applications (Radarr, Sonarr etc..)
+
+Continue application configurations at: https://MediaStack.Guide
+
+
+
+
+#####################################################################################
+#                                   THE END !                                       #
+#####################################################################################
