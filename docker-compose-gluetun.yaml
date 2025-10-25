@@ -28,13 +28,12 @@ services:
     devices:
       - /dev/net/tun:/dev/net/tun
     ports:
-      - "8888:8888/tcp"                         # Gluetun Local Network HTTP proxy
-      - "8388:8388/tcp"                         # Gluetun Local Network Shadowsocks
-      - "8388:8388/udp"                         # Gluetun Local Network Shadowsocks
+      - "8888:8888/tcp"                                           # Gluetun Local Network HTTP proxy
+      - "8388:8388/tcp"                                           # Gluetun Local Network Shadowsocks
+      - "8388:8388/udp"                                           # Gluetun Local Network Shadowsocks
       - ${GLUETUN_CONTROL_PORT:?err}:${GLUETUN_CONTROL_PORT:?err} # Gluetun Status Port
 
-# Comment out lines below if they are not going to use Gluetun VPN for Internet connection:
-
+    # Comment out lines below if they are not going to use Gluetun VPN for Internet connection:
       - "${WEBUI_PORT_BAZARR:?err}:6767"        # WebUI Portal: Bazarr
       - "${WEBUI_PORT_JELLYFIN:?err}:8096"      # WebUI Portal: Jellyfin
       - "${WEBUI_PORT_JELLYSEERR:?err}:5055"    # WebUI Portal: Jellyseerr
@@ -56,15 +55,16 @@ services:
       - "${TDARR_SERVER_PORT:?err}:${TDARR_SERVER_PORT:?err}"   # Tdarr: Server Port
       - "${WEBUI_PORT_TDARR:?err}:${WEBUI_PORT_TDARR:?err}"     # Tdarr: WebUI Portal
 
+    #Plex Ports (Comment out if Plex is not using Gluetun VPN or not installed)
       - "${WEBUI_PORT_PLEX:?err}:32400"         # WebUI Portal: Plex
-#      - 1900:1900/udp                           # DNLA Service       (Clashes with Synology: SSPD "File Services" --> "Advanced")
-#      - 5353:5353/udp                           # Plex Network Port  (Clashes with Synology: Bonjour "File Services" --> "Advanced")
       - 8324:8324                               # Plex Network Port
       - 32410:32410/udp                         # Plex Network Port
       - 32412:32412/udp                         # Plex Network Port
       - 32413:32413/udp                         # Plex Network Port
       - 32414:32414/udp                         # Plex Network Port
       - 32469:32469                             # Plex Network Port
+      #- 1900:1900/udp                           # DNLA Service       (Clashes with Synology: SSPD "File Services" --> "Advanced")
+      #- 5353:5353/udp                           # Plex Network Port  (Clashes with Synology: Bonjour "File Services" --> "Advanced")
 
     volumes:
       - ${FOLDER_FOR_DATA:?err}/gluetun:/gluetun
@@ -96,6 +96,5 @@ services:
       - PORT_FORWARD_ONLY=on
 
 # NOTE: Gluetun VPN container MUST ONLY connect to the mediastack
-
     networks:
       - mediastack
