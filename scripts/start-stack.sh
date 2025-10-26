@@ -57,45 +57,45 @@ echo -e "${YELLOW}Starting MediaStack services in correct order...${NC}"
 echo ""
 
 # GLUETUN MUST BE THE FIRST CONTAINER CREATED - IT SETS UP DOCKER NETWORK AND VPN
-start_service "docker-compose-gluetun.yaml" "Gluetun VPN"
+start_service "compose/docker-compose-gluetun.yaml" "Gluetun VPN"
 
 # Download clients
-start_service "docker-compose-qbittorrent.yaml" "qBittorrent"
-start_service "docker-compose-sabnzbd.yaml" "SABnzbd"
+start_service "compose/docker-compose-qbittorrent.yaml" "qBittorrent"
+start_service "compose/docker-compose-sabnzbd.yaml" "SABnzbd"
 
 # Media management applications
-start_service "docker-compose-prowlarr.yaml" "Prowlarr"
-start_service "docker-compose-lidarr.yaml" "Lidarr"
-start_service "docker-compose-mylar.yaml" "Mylar3"
-start_service "docker-compose-radarr.yaml" "Radarr"
-start_service "docker-compose-readarr.yaml" "Readarr"
-start_service "docker-compose-sonarr.yaml" "Sonarr"
-start_service "docker-compose-whisparr.yaml" "Whisparr"
-start_service "docker-compose-bazarr.yaml" "Bazarr"
+start_service "compose/docker-compose-prowlarr.yaml" "Prowlarr"
+start_service "compose/docker-compose-lidarr.yaml" "Lidarr"
+start_service "compose/docker-compose-mylar.yaml" "Mylar3"
+start_service "compose/docker-compose-radarr.yaml" "Radarr"
+start_service "compose/docker-compose-readarr.yaml" "Readarr"
+start_service "compose/docker-compose-sonarr.yaml" "Sonarr"
+start_service "compose/docker-compose-whisparr.yaml" "Whisparr"
+start_service "compose/docker-compose-bazarr.yaml" "Bazarr"
 
 # Media servers
-start_service "docker-compose-jellyfin.yaml" "Jellyfin"
-start_service "docker-compose-jellyseerr.yaml" "Jellyseerr"
-start_service "docker-compose-plex.yaml" "Plex"
+start_service "compose/docker-compose-jellyfin.yaml" "Jellyfin"
+start_service "compose/docker-compose-jellyseerr.yaml" "Jellyseerr"
+start_service "compose/docker-compose-plex.yaml" "Plex"
 
 # Dashboards
-start_service "docker-compose-homarr.yaml" "Homarr"
-start_service "docker-compose-homepage.yaml" "Homepage"
-start_service "docker-compose-heimdall.yaml" "Heimdall"
+start_service "compose/docker-compose-homarr.yaml" "Homarr"
+start_service "compose/docker-compose-homepage.yaml" "Homepage"
+start_service "compose/docker-compose-heimdall.yaml" "Heimdall"
 
 # Utility services
-start_service "docker-compose-flaresolverr.yaml" "FlareSolverr"
-start_service "docker-compose-unpackerr.yaml" "Unpackerr"
-start_service "docker-compose-tdarr.yaml" "Tdarr"
+start_service "compose/docker-compose-flaresolverr.yaml" "FlareSolverr"
+start_service "compose/docker-compose-unpackerr.yaml" "Unpackerr"
+start_service "compose/docker-compose-tdarr.yaml" "Tdarr"
 
 # Management and tools
-start_service "docker-compose-portainer.yaml" "Portainer"
-start_service "docker-compose-filebot.yaml" "FileBot"
+start_service "compose/docker-compose-portainer.yaml" "Portainer"
+start_service "compose/docker-compose-filebot.yaml" "FileBot"
 
 # Reverse proxy and authentication (optional)
-start_service "docker-compose-swag.yaml" "SWAG"
-start_service "docker-compose-authelia.yaml" "Authelia"
-start_service "docker-compose-ddns-updater.yaml" "DDNS Updater"
+start_service "compose/docker-compose-swag.yaml" "SWAG"
+start_service "compose/docker-compose-authelia.yaml" "Authelia"
+start_service "compose/docker-compose-ddns-updater.yaml" "DDNS Updater"
 
 echo -e "${GREEN}✓ MediaStack startup complete!${NC}"
 echo ""

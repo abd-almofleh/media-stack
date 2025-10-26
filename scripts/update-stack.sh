@@ -40,7 +40,7 @@ echo ""
 
 # Download all of the Docker images needed for each YAML file
 echo -e "${BLUE}Step 1: Pulling latest Docker images...${NC}"
-for file in docker-compose-*.yaml; do
+for file in compose/docker-compose-*.yaml; do
     if [[ -f "$file" ]]; then
         echo -e "${YELLOW}Pulling Docker image for $file...${NC}"
         sudo docker compose --file "$file" --env-file docker-compose.env pull
@@ -52,14 +52,14 @@ echo -e "${BLUE}Step 2: Recreating containers...${NC}"
 
 # Start Gluetun container first, then start all other MediaStack containers
 echo -e "${GREEN}Starting Gluetun first (required for network setup)...${NC}"
-if [[ -f "docker-compose-gluetun.yaml" ]]; then
-    sudo docker compose --file docker-compose-gluetun.yaml --env-file docker-compose.env up -d --force-recreate
+if [[ -f "compose/docker-compose-gluetun.yaml" ]]; then
+    sudo docker compose --file compose/docker-compose-gluetun.yaml --env-file docker-compose.env up -d --force-recreate
     echo ""
 fi
 
 # Recreate all other containers
-for file in docker-compose-*.yaml; do
-    if [[ "$file" != "docker-compose-gluetun.yaml" && -f "$file" ]]; then
+for file in compose/docker-compose-*.yaml; do
+    if [[ "$file" != "compose/docker-compose-gluetun.yaml" && -f "$file" ]]; then
         echo -e "${YELLOW}Recreating Docker container for $file...${NC}"
         sudo docker compose --file "$file" --env-file docker-compose.env up -d --force-recreate
     fi

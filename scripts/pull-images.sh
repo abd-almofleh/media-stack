@@ -39,7 +39,7 @@ echo -e "${YELLOW}Pulling Docker images for all MediaStack services...${NC}"
 echo ""
 
 # Download all of the Docker images needed for each YAML file
-for file in docker-compose-*.yaml; do
+for file in compose/docker-compose-*.yaml; do
     if [[ -f "$file" ]]; then
         echo -e "${BLUE}Pulling Docker image for $file...${NC}"
         if sudo docker compose --file "$file" --env-file docker-compose.env pull; then

@@ -67,11 +67,11 @@ find_compose_file() {
     local compose_file=""
     
     # Check if it's a direct docker-compose file name
-    if [[ -f "docker-compose-${service_name}.yaml" ]]; then
-        compose_file="docker-compose-${service_name}.yaml"
+    if [[ -f "compose/docker-compose-${service_name}.yaml" ]]; then
+        compose_file="compose/docker-compose-${service_name}.yaml"
     else
         # Search for the service in all compose files
-        for file in docker-compose-*.yaml; do
+        for file in compose/docker-compose-*.yaml; do
             if [[ -f "$file" ]]; then
                 if grep -q "container_name: ${service_name}" "$file" 2>/dev/null; then
                     compose_file="$file"
@@ -89,7 +89,7 @@ list_services() {
     echo -e "${BLUE}Available services:${NC}"
     echo "==================="
     
-    for file in docker-compose-*.yaml; do
+    for file in compose/docker-compose-*.yaml; do
         if [[ -f "$file" ]]; then
             service=$(basename "$file" .yaml | sed 's/docker-compose-//')
             container_name=$(grep "container_name:" "$file" 2>/dev/null | head -1 | awk '{print $2}')
@@ -113,16 +113,16 @@ start_all_services() {
     echo ""
     
     # Start Gluetun first (required for network setup)
-    if [[ -f "docker-compose-gluetun.yaml" ]]; then
+    if [[ -f "compose/docker-compose-gluetun.yaml" ]]; then
         echo -e "${BLUE}Starting Gluetun VPN (required first)...${NC}"
-        sudo docker compose --file "docker-compose-gluetun.yaml" --env-file docker-compose.env up -d
+        sudo docker compose --file "compose/docker-compose-gluetun.yaml" --env-file docker-compose.env up -d
         echo ""
         sleep 3
     fi
     
     # Start all other services
-    for file in docker-compose-*.yaml; do
-        if [[ "$file" != "docker-compose-gluetun.yaml" && -f "$file" ]]; then
+    for file in compose/docker-compose-*.yaml; do
+        if [[ "$file" != "compose/docker-compose-gluetun.yaml" && -f "$file" ]]; then
             service=$(basename "$file" .yaml | sed 's/docker-compose-//')
             echo -e "${BLUE}Starting $service...${NC}"
             sudo docker compose --file "$file" --env-file docker-compose.env up -d
@@ -165,7 +165,7 @@ remove_all_services() {
     echo -e "${YELLOW}This will stop and remove containers but preserve volumes/data.${NC}"
     echo ""
     
-    for file in docker-compose-*.yaml; do
+    for file in compose/docker-compose-*.yaml; do
         if [[ -f "$file" ]]; then
             service=$(basename "$file" .yaml | sed 's/docker-compose-//')
             echo -e "${RED}Removing $service...${NC}"

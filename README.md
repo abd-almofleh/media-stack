@@ -11,6 +11,11 @@ This directory contains a unified management system for your MediaStack Docker s
 │   ├── radarr/                # (All service data folders)
 │   ├── sonarr/
 │   └── ...
+├── compose/                    # 🐳 Docker Compose files
+│   ├── docker-compose-gluetun.yaml
+│   ├── docker-compose-radarr.yaml
+│   ├── docker-compose-sonarr.yaml
+│   └── [20+ other services].yaml
 ├── scripts/                    # All management scripts
 │   ├── mediastack.sh          # ⭐ UNIFIED management script (all functionality)
 │   ├── setup-directories.sh   # Directory setup
@@ -21,7 +26,6 @@ This directory contains a unified management system for your MediaStack Docker s
 │   ├── logs.sh                # View logs
 │   └── status.sh              # Check status
 ├── mediastack.sh              # 🚀 Convenience launcher
-├── docker-compose-*.yaml      # Individual service definitions
 ├── docker-compose.env         # Environment variables
 └── .gitignore                 # Excludes data/ folder
 ```
@@ -79,7 +83,8 @@ This directory contains a unified management system for your MediaStack Docker s
 ## Features
 
 - **🎯 Unified Management:** Single script handles all operations
-- **📁 Organized Structure:** All scripts in dedicated `scripts/` folder  
+- **📁 Clean Organization:** Separate folders for scripts, compose files, and data
+- **🐳 Compose Isolation:** All Docker Compose files in dedicated `compose/` folder
 - **🚀 Convenience Launcher:** Use from main directory
 - **🔄 Smart Ordering:** Gluetun always starts first
 - **🎛️ Individual Control:** Manage single containers
@@ -87,6 +92,7 @@ This directory contains a unified management system for your MediaStack Docker s
 - **💾 Data Preservation:** Scripts preserve volumes and configurations
 - **🎨 Colored Output:** Easy to read status messages
 - **🛑 Smart Stopping:** Choose between stop-all (preserve) or remove-all (cleanup)
+- **🚫 Git Clean:** Data and sensitive configs excluded from version control
 
 ## Notes
 

@@ -38,7 +38,7 @@ echo -e "${YELLOW}Stopping all MediaStack services...${NC}"
 echo ""
 
 # Stop all services
-for file in docker-compose-*.yaml; do
+for file in compose/docker-compose-*.yaml; do
     if [[ -f "$file" ]]; then
         echo -e "${YELLOW}Stopping services in $file...${NC}"
         sudo docker compose --file "$file" --env-file docker-compose.env down
