@@ -1,4 +1,5 @@
-# Ignore all folders (directories) and their contents
-**/
-!scripts/
+# Ignore container data directories
+data/
+
+# Ignore environment files with sensitive data
 *.env

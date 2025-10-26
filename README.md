@@ -6,6 +6,11 @@ This directory contains a unified management system for your MediaStack Docker s
 
 ```
 /mnt/d/MediaStack/AppData/
+├── data/                       # 📁 All container data (gitignored)
+│   ├── gluetun/               # Container configurations and data
+│   ├── radarr/                # (All service data folders)
+│   ├── sonarr/
+│   └── ...
 ├── scripts/                    # All management scripts
 │   ├── mediastack.sh          # ⭐ UNIFIED management script (all functionality)
 │   ├── setup-directories.sh   # Directory setup
@@ -17,7 +22,8 @@ This directory contains a unified management system for your MediaStack Docker s
 │   └── status.sh              # Check status
 ├── mediastack.sh              # 🚀 Convenience launcher
 ├── docker-compose-*.yaml      # Individual service definitions
-└── docker-compose.env         # Environment variables
+├── docker-compose.env         # Environment variables
+└── .gitignore                 # Excludes data/ folder
 ```
 
 ## Usage
@@ -84,7 +90,9 @@ This directory contains a unified management system for your MediaStack Docker s
 
 ## Notes
 
-- All scripts automatically reference the correct paths for docker-compose files
-- Environment variables are loaded from `docker-compose.env` in the main directory
-- Gluetun is always started first to establish VPN network
-- Container data and configurations are preserved across operations
+- **📁 Clean Organization:** Container data is now in `data/` folder (gitignored)
+- **🔄 Automatic Paths:** All scripts and compose files use environment variables
+- **🚫 Git Safe:** Container data folders are excluded from version control
+- **🛡️ Data Preserved:** All container configurations persist across operations
+- **🌐 Network Priority:** Gluetun always starts first to establish VPN network
+- **📍 Flexible Paths:** Easy to relocate by updating `FOLDER_FOR_DATA` in `.env`
