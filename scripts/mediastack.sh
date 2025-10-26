@@ -56,6 +56,58 @@ check_env_file() {
     fi
 }
 
+# Function to load whitelist services
+load_whitelist() {
+    local whitelist_file="services.whitelist"
+    local whitelist_services=""
+    
+    if [[ -f "$whitelist_file" ]]; then
+        # Read whitelist file, ignore comments and empty lines
+        whitelist_services=$(grep -v '^#' "$whitelist_file" | grep -v '^[[:space:]]*$' | tr '\n' '|')
+        # Remove trailing pipe
+        whitelist_services=${whitelist_services%|}
+    fi
+    
+    echo "$whitelist_services"
+}
+
+# Function to check if service is in whitelist
+is_service_whitelisted() {
+    local service_name=$1
+    local whitelist=$2
+    local use_all=${3:-false}
+    
+    # If --all flag is used or no whitelist exists, allow all services
+    if [[ "$use_all" == "true" ]] || [[ -z "$whitelist" ]]; then
+        return 0
+    fi
+    
+    # Check if service is in whitelist
+    if echo "$whitelist" | grep -q "$service_name"; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+# Function to get filtered compose files based on whitelist
+get_filtered_compose_files() {
+    local use_all=${1:-false}
+    local whitelist=$(load_whitelist)
+    local filtered_files=""
+    
+    for file in compose/docker-compose-*.yaml; do
+        if [[ -f "$file" ]]; then
+            local service=$(basename "$file" .yaml | sed 's/docker-compose-//')
+            if is_service_whitelisted "$service" "$whitelist" "$use_all"; then
+                filtered_files="$filtered_files $file"
+            fi
+        fi
+    done
+    
+    echo "$filtered_files"
+}
+
 # Function to run docker compose with proper environment
 run_compose() {
     docker compose --env-file docker-compose.env "$@"
@@ -108,29 +160,46 @@ list_services() {
 
 # Function to start all services in correct order (Gluetun first)
 start_all_services() {
-    echo -e "${GREEN}Starting all MediaStack services...${NC}"
-    echo -e "${YELLOW}Starting in correct order (Gluetun first)${NC}"
+    local use_all=${1:-false}
+    local whitelist=$(load_whitelist)
+    
+    if [[ "$use_all" == "true" ]]; then
+        echo -e "${GREEN}Starting ALL MediaStack services (--all flag used)...${NC}"
+    elif [[ -n "$whitelist" ]]; then
+        echo -e "${GREEN}Starting whitelisted services: $(echo "$whitelist" | tr '|' ', '), gluetun${NC}"
+    else
+        echo -e "${GREEN}Starting all MediaStack services (no whitelist found)...${NC}"
+    fi
+    echo -e "${BLUE}Starting in correct order (Gluetun first)${NC}"
     echo ""
     
-    # Start Gluetun first (required for network setup)
+    # Always start Gluetun first (required for network setup) - regardless of whitelist
     if [[ -f "compose/docker-compose-gluetun.yaml" ]]; then
-        echo -e "${BLUE}Starting Gluetun VPN (required first)...${NC}"
+        echo -e "${GREEN}Starting Gluetun VPN (required first)...${NC}"
         sudo docker compose --file "compose/docker-compose-gluetun.yaml" --env-file docker-compose.env up -d
         echo ""
         sleep 3
     fi
     
-    # Start all other services
+    # Start all other whitelisted services
+    local started_count=0
     for file in compose/docker-compose-*.yaml; do
         if [[ "$file" != "compose/docker-compose-gluetun.yaml" && -f "$file" ]]; then
             service=$(basename "$file" .yaml | sed 's/docker-compose-//')
-            echo -e "${BLUE}Starting $service...${NC}"
-            sudo docker compose --file "$file" --env-file docker-compose.env up -d
+            if is_service_whitelisted "$service" "$whitelist" "$use_all"; then
+                echo -e "${BLUE}Starting $service...${NC}"
+                sudo docker compose --file "$file" --env-file docker-compose.env up -d
+                ((started_count++))
+            fi
         fi
     done
     
     echo ""
-    echo -e "${GREEN}✓ All services started!${NC}"
+    if [[ $started_count -gt 0 ]] || is_service_whitelisted "gluetun" "$whitelist" "$use_all"; then
+        echo -e "${GREEN}✓ Whitelisted services started!${NC}"
+    else
+        echo -e "${YELLOW}⚠ No services were started (check your whitelist)${NC}"
+    fi
 }
 
 # Function to stop all running services (without removing containers)
@@ -139,29 +208,35 @@ stop_all_services() {
     echo ""
     
     # Get list of running MediaStack containers
-    local running_containers=$(sudo docker ps --format "{{.Names}}" | grep -E "(gluetun|bazarr|jellyfin|jellyseerr|lidarr|mylar|plex|portainer|prowlarr|qbittorrent|radarr|readarr|sabnzbd|sonarr|swag|tdarr|unpackerr|whisparr|flaresolverr|homarr|homepage|heimdall|ddns-updater|authelia|filebot)")
+    local all_running=$(sudo docker ps --format "{{.Names}}" | grep -E "(gluetun|bazarr|jellyfin|jellyseerr|lidarr|mylar|plex|portainer|prowlarr|qbittorrent|radarr|readarr|sabnzbd|sonarr|swag|tdarr|unpackerr|whisparr|flaresolverr|homarr|homepage|heimdall|ddns-updater|authelia|filebot)")
     
-    if [[ -z "$running_containers" ]]; then
+    if [[ -z "$all_running" ]]; then
         echo -e "${BLUE}No MediaStack containers are currently running.${NC}"
         return
     fi
     
+    local stopped_count=0
     # Stop each running container
     while IFS= read -r container; do
         if [[ -n "$container" ]]; then
             echo -e "${YELLOW}Stopping $container...${NC}"
             sudo docker stop "$container"
+            ((stopped_count++))
         fi
-    done <<< "$running_containers"
+    done <<< "$all_running"
     
     echo ""
-    echo -e "${YELLOW}✓ All running services stopped!${NC}"
+    if [[ $stopped_count -gt 0 ]]; then
+        echo -e "${YELLOW}✓ All running services stopped!${NC}"
+    else
+        echo -e "${BLUE}ℹ No services were running.${NC}"
+    fi
     echo -e "${BLUE}Containers are preserved and can be started again.${NC}"
 }
 
 # Function to remove all services (stop and remove containers)
 remove_all_services() {
-    echo -e "${RED}Removing all MediaStack services and containers...${NC}"
+    echo -e "${RED}Removing ALL MediaStack services and containers...${NC}"
     echo -e "${YELLOW}This will stop and remove containers but preserve volumes/data.${NC}"
     echo ""
     
@@ -173,6 +248,7 @@ remove_all_services() {
         return
     fi
     
+    local removed_count=0
     # Stop and remove each container
     while IFS= read -r container; do
         if [[ -n "$container" ]]; then
@@ -180,15 +256,20 @@ remove_all_services() {
             # Stop container if running, then remove it
             sudo docker stop "$container" 2>/dev/null || true
             sudo docker rm "$container" 2>/dev/null || true
+            ((removed_count++))
         fi
     done <<< "$all_containers"
     
-    # Clean up the mediastack network if it exists and has no containers
+    # Clean up the mediastack network
     echo -e "${BLUE}Cleaning up mediastack network...${NC}"
     sudo docker network rm mediastack 2>/dev/null || true
     
     echo ""
-    echo -e "${RED}✓ All services removed!${NC}"
+    if [[ $removed_count -gt 0 ]]; then
+        echo -e "${RED}✓ All services removed!${NC}"
+    else
+        echo -e "${BLUE}ℹ No services were found to remove.${NC}"
+    fi
     echo -e "${BLUE}Data volumes are preserved. Use start-all to recreate containers.${NC}"
 }
 
@@ -227,7 +308,11 @@ case "$1" in
         ;;
     start-all)
         check_env_file
-        start_all_services
+        use_all_flag=false
+        if [[ "$2" == "--all" ]]; then
+            use_all_flag=true
+        fi
+        start_all_services "$use_all_flag"
         exit 0
         ;;
     stop-all)
@@ -237,7 +322,12 @@ case "$1" in
         ;;
     restart-all)
         check_env_file
-        restart_all_services
+        use_all_flag=false
+        if [[ "$2" == "--all" ]]; then
+            use_all_flag=true
+        fi
+        stop_all_services
+        start_all_services "$use_all_flag"
         exit 0
         ;;
     remove-all)
@@ -276,8 +366,12 @@ case "$command" in
                 echo -e "${RED}✗ Failed to start $service_name${NC}"
             fi
         else
-            # Start all services
-            start_all_services
+            # Start all services - check for --all flag
+            use_all_flag=false
+            if [[ "$2" == "--all" ]]; then
+                use_all_flag=true
+            fi
+            start_all_services "$use_all_flag"
         fi
         ;;
     stop)
@@ -325,8 +419,13 @@ case "$command" in
                 echo -e "${RED}✗ Failed to restart $service_name${NC}"
             fi
         else
-            # Restart all services
-            restart_all_services
+            # Restart all services - check for --all flag (applies only to start)
+            use_all_flag=false
+            if [[ "$2" == "--all" ]]; then
+                use_all_flag=true
+            fi
+            stop_all_services
+            start_all_services "$use_all_flag"
         fi
         ;;
     logs)
@@ -364,13 +463,18 @@ case "$command" in
         echo "  update                 - Pull latest images and restart services"
         echo ""
         echo -e "${GREEN}Service Management:${NC}"
-        echo "  start                  - Start all services (Gluetun first)"
+        echo "  start [--all]          - Start services (whitelist applies, Gluetun always starts)"
         echo "  stop                   - Stop all running services (keep containers)"
-        echo "  restart                - Restart all services"
-        echo "  start-all              - Start all services (Gluetun first)"
+        echo "  restart [--all]        - Stop all, then start services (whitelist applies to start only)"
+        echo "  start-all [--all]      - Start services (whitelist applies, Gluetun always starts)"
         echo "  stop-all               - Stop all running services (keep containers)"
-        echo "  restart-all            - Restart all services"
-        echo "  remove-all             - Stop and remove all containers"
+        echo "  restart-all [--all]    - Stop all, then start services (whitelist applies to start only)"
+        echo "  remove-all             - Stop and remove ALL containers"
+        echo ""
+        echo -e "${BLUE}Whitelist Support:${NC}"
+        echo "  Whitelist only applies to START and RESTART operations (Gluetun always starts)"
+        echo "  STOP and REMOVE operations always affect all services"
+        echo "  Use --all flag to bypass whitelist for start/restart operations"
         echo ""
         echo -e "${GREEN}Individual Services:${NC}"
         echo "  start <service>        - Start individual service"
@@ -385,10 +489,13 @@ case "$command" in
         echo ""
         echo -e "${YELLOW}Examples:${NC}"
         echo "  $0 start gluetun       - Start only Gluetun"
-        echo "  $0 stop-all            - Stop all running containers (preserve)"
-        echo "  $0 remove-all          - Remove all containers"
+        echo "  $0 stop-all            - Stop ALL running services"
+        echo "  $0 start-all           - Start Gluetun + whitelisted services"
+        echo "  $0 start-all --all     - Start ALL services (bypass whitelist)"
+        echo "  $0 restart-all         - Stop all, start Gluetun + whitelisted services"
+        echo "  $0 restart-all --all   - Stop all, start ALL services"
+        echo "  $0 remove-all          - Remove ALL containers"
         echo "  $0 logs jellyfin       - Show Jellyfin logs"
-        echo "  $0 start-all           - Start all services"
         echo ""
         echo -e "${YELLOW}First time setup:${NC}"
         echo "1. $0 setup"
