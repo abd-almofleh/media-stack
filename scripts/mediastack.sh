@@ -281,34 +281,47 @@ check_health() {
     echo "============================"
     echo ""
     
-    # Define service-to-port mappings (reading from env or using defaults)
-    declare -A service_ports=(
-        ["gluetun"]="8320"              # Gluetun control port
-        ["bazarr"]="6767"              # Bazarr WebUI
-        ["jellyfin"]="8096"            # Jellyfin WebUI
-        ["jellyseerr"]="5055"          # Jellyseerr WebUI
-        ["lidarr"]="8686"              # Lidarr WebUI
-        ["mylar"]="8090"               # Mylar3 WebUI
-        ["prowlarr"]="9696"            # Prowlarr WebUI
-        ["radarr"]="7878"              # Radarr WebUI
-        ["readarr"]="8787"             # Readarr WebUI
-        ["sabnzbd"]="8200"             # SABnzbd WebUI (mapped from 8080)
-        ["sonarr"]="8989"              # Sonarr WebUI
-        ["whisparr"]="6969"            # Whisparr WebUI
-        ["filebot"]="5454"             # Filebot WebUI
-        ["qbittorrent"]="8200"         # qBittorrent WebUI (mapped from default)
-        ["flaresolverr"]="8191"        # FlareSolverr API
-        ["tdarr"]="8265"               # Tdarr WebUI
-        ["portainer"]="9000"           # Portainer WebUI
-        ["ddns-updater"]="8310"        # DDNS-Updater WebUI
-        ["heimdall"]="2080"            # Heimdall WebUI
-        ["homarr"]="3200"              # Homarr WebUI
-        ["homepage"]="3000"            # Homepage WebUI
-        ["plex"]="32400"               # Plex WebUI
-        ["swag"]="443"                 # SWAG HTTPS
-        ["authelia"]="9091"            # Authelia WebUI
-        ["unpackerr"]=""               # No WebUI port
-    )
+    # Function to get port from env file (handles Windows line endings)
+    get_port_from_env() {
+        local service="$1"
+        local port=""
+        local var_name=""
+        
+        case "$service" in
+            "gluetun")          var_name="GLUETUN_CONTROL_PORT" ;;
+            "bazarr")           var_name="WEBUI_PORT_BAZARR" ;;
+            "jellyfin")         var_name="WEBUI_PORT_JELLYFIN" ;;
+            "jellyseerr")       var_name="WEBUI_PORT_JELLYSEERR" ;;
+            "lidarr")           var_name="WEBUI_PORT_LIDARR" ;;
+            "mylar")            var_name="WEBUI_PORT_MYLAR" ;;
+            "prowlarr")         var_name="WEBUI_PORT_PROWLARR" ;;
+            "radarr")           var_name="WEBUI_PORT_RADARR" ;;
+            "readarr")          var_name="WEBUI_PORT_READARR" ;;
+            "sabnzbd")          var_name="WEBUI_PORT_SABNZBD" ;;
+            "sonarr")           var_name="WEBUI_PORT_SONARR" ;;
+            "whisparr")         var_name="WEBUI_PORT_WHISPARR" ;;
+            "filebot")          var_name="WEBUI_PORT_FILEBOT" ;;
+            "qbittorrent")      var_name="WEBUI_PORT_QBITTORRENT" ;;
+            "flaresolverr")     var_name="FLARESOLVERR_PORT" ;;
+            "tdarr")            var_name="WEBUI_PORT_TDARR" ;;
+            "portainer")        var_name="WEBUI_PORT_PORTAINER" ;;
+            "ddns-updater")     var_name="WEBUI_PORT_DDNS_UPDATER" ;;
+            "heimdall")         var_name="WEBUI_PORT_HEIMDALL" ;;
+            "homarr")           var_name="WEBUI_PORT_HOMARR" ;;
+            "homepage")         var_name="WEBUI_PORT_HOMEPAGE" ;;
+            "plex")             var_name="WEBUI_PORT_PLEX" ;;
+            "swag")             port="443"; echo "$port"; return ;;  # SWAG always uses 443
+            "authelia")         var_name="WEBUI_PORT_AUTHELIA" ;;
+            "unpackerr")        port=""; echo "$port"; return ;;     # No WebUI
+        esac
+        
+        if [[ -n "$var_name" && -f "docker-compose.env" ]]; then
+            # Read port from env file, handling Windows line endings
+            port=$(grep "^${var_name}=" docker-compose.env 2>/dev/null | cut -d'=' -f2 | tr -d '\r\n')
+        fi
+        
+        echo "$port"
+    }
     
     # Get list of running MediaStack containers
     local containers
@@ -343,8 +356,8 @@ check_health() {
             local status=$(sudo docker inspect "$container" --format '{{.State.Status}}' 2>/dev/null)
             local health=$(sudo docker inspect "$container" --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}no-health-check{{end}}' 2>/dev/null)
             
-            # Get port for this service
-            local port="${service_ports[$container]}"
+            # Get port for this service from env file
+            local port=$(get_port_from_env "$container")
             
             echo -e "${BLUE}Checking $container...${NC}"
             
