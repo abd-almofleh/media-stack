@@ -25,7 +25,8 @@ echo "================================="
 
 # Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR"
+# Change to parent directory where docker-compose files are located
+cd "$(dirname "$SCRIPT_DIR")"
 
 # Check if docker-compose.env exists and source it
 if [[ -f "docker-compose.env" ]]; then

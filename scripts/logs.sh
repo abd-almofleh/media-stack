@@ -22,7 +22,8 @@ NC='\033[0m' # No Color
 
 # Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR"
+# Change to parent directory where docker-compose files are located
+cd "$(dirname "$SCRIPT_DIR")"
 
 if [[ $# -eq 1 ]]; then
     # Show logs for specific service
