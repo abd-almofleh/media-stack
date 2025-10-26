@@ -165,13 +165,27 @@ remove_all_services() {
     echo -e "${YELLOW}This will stop and remove containers but preserve volumes/data.${NC}"
     echo ""
     
-    for file in compose/docker-compose-*.yaml; do
-        if [[ -f "$file" ]]; then
-            service=$(basename "$file" .yaml | sed 's/docker-compose-//')
-            echo -e "${RED}Removing $service...${NC}"
-            sudo docker compose --file "$file" --env-file docker-compose.env down
+    # Get list of all MediaStack containers (running and stopped)
+    local all_containers=$(sudo docker ps -a --format "{{.Names}}" | grep -E "(gluetun|bazarr|jellyfin|jellyseerr|lidarr|mylar|plex|portainer|prowlarr|qbittorrent|radarr|readarr|sabnzbd|sonarr|swag|tdarr|unpackerr|whisparr|flaresolverr|homarr|homepage|heimdall|ddns-updater|authelia|filebot)")
+    
+    if [[ -z "$all_containers" ]]; then
+        echo -e "${BLUE}No MediaStack containers found.${NC}"
+        return
+    fi
+    
+    # Stop and remove each container
+    while IFS= read -r container; do
+        if [[ -n "$container" ]]; then
+            echo -e "${RED}Removing $container...${NC}"
+            # Stop container if running, then remove it
+            sudo docker stop "$container" 2>/dev/null || true
+            sudo docker rm "$container" 2>/dev/null || true
         fi
-    done
+    done <<< "$all_containers"
+    
+    # Clean up the mediastack network if it exists and has no containers
+    echo -e "${BLUE}Cleaning up mediastack network...${NC}"
+    sudo docker network rm mediastack 2>/dev/null || true
     
     echo ""
     echo -e "${RED}✓ All services removed!${NC}"
@@ -278,15 +292,16 @@ case "$command" in
                 exit 1
             fi
             echo -e "${YELLOW}Stopping service: $service_name${NC}"
-            echo -e "${BLUE}Using file: $compose_file${NC}"
-            if sudo docker compose --file "$compose_file" --env-file docker-compose.env down; then
+            echo -e "${BLUE}Container: $service_name${NC}"
+            if sudo docker stop "$service_name" 2>/dev/null; then
                 echo -e "${YELLOW}✓ $service_name stopped successfully${NC}"
+                echo -e "${BLUE}Container preserved and can be restarted.${NC}"
             else
-                echo -e "${RED}✗ Failed to stop $service_name${NC}"
+                echo -e "${RED}✗ Failed to stop $service_name (may not be running)${NC}"
             fi
         else
-            # Stop all services using remove method (traditional behavior)
-            remove_all_services
+            # Stop all services (preserve containers)
+            stop_all_services
         fi
         ;;
     restart)
@@ -350,10 +365,10 @@ case "$command" in
         echo ""
         echo -e "${GREEN}Service Management:${NC}"
         echo "  start                  - Start all services (Gluetun first)"
-        echo "  stop                   - Stop and remove all containers"
+        echo "  stop                   - Stop all running services (keep containers)"
         echo "  restart                - Restart all services"
         echo "  start-all              - Start all services (Gluetun first)"
-        echo "  stop-all               - Stop running services (keep containers)"
+        echo "  stop-all               - Stop all running services (keep containers)"
         echo "  restart-all            - Restart all services"
         echo "  remove-all             - Stop and remove all containers"
         echo ""

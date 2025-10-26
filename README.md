@@ -74,10 +74,11 @@ This directory contains a unified management system for your MediaStack Docker s
 
 4. **Bulk Operations:**
    ```bash
-   ./mediastack.sh start-all    # Start all (Gluetun first)
+   ./mediastack.sh start-all    # Start all services (Gluetun first)
+   ./mediastack.sh stop         # Stop all running (preserve containers)
    ./mediastack.sh stop-all     # Stop all running (preserve containers)
-   ./mediastack.sh remove-all   # Remove all containers
-   ./mediastack.sh restart-all  # Full restart
+   ./mediastack.sh remove-all   # Stop and remove all containers
+   ./mediastack.sh restart-all  # Full restart (remove + recreate)
    ```
 
 ## Features
@@ -91,7 +92,8 @@ This directory contains a unified management system for your MediaStack Docker s
 - **📦 Bulk Operations:** Control all containers at once
 - **💾 Data Preservation:** Scripts preserve volumes and configurations
 - **🎨 Colored Output:** Easy to read status messages
-- **🛑 Smart Stopping:** Choose between stop-all (preserve) or remove-all (cleanup)
+- **🛑 Container-Aware Operations:** Works with actual containers, not just compose files
+- **🔄 Smart Stopping:** stop/stop-all preserve containers, remove-all cleans up completely
 - **🚫 Git Clean:** Data and sensitive configs excluded from version control
 
 ## Notes
