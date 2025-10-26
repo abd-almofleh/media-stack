@@ -273,6 +273,172 @@ remove_all_services() {
     echo -e "${BLUE}Data volumes are preserved. Use start-all to recreate containers.${NC}"
 }
 
+# Function to check health of services (container status + port connectivity)
+check_health() {
+    local service_name="$1"
+    
+    echo -e "${BLUE}MediaStack Health Check${NC}"
+    echo "============================"
+    echo ""
+    
+    # Define service-to-port mappings (reading from env or using defaults)
+    declare -A service_ports=(
+        ["gluetun"]="8320"              # Gluetun control port
+        ["bazarr"]="6767"              # Bazarr WebUI
+        ["jellyfin"]="8096"            # Jellyfin WebUI
+        ["jellyseerr"]="5055"          # Jellyseerr WebUI
+        ["lidarr"]="8686"              # Lidarr WebUI
+        ["mylar"]="8090"               # Mylar3 WebUI
+        ["prowlarr"]="9696"            # Prowlarr WebUI
+        ["radarr"]="7878"              # Radarr WebUI
+        ["readarr"]="8787"             # Readarr WebUI
+        ["sabnzbd"]="8200"             # SABnzbd WebUI (mapped from 8080)
+        ["sonarr"]="8989"              # Sonarr WebUI
+        ["whisparr"]="6969"            # Whisparr WebUI
+        ["filebot"]="5454"             # Filebot WebUI
+        ["qbittorrent"]="8200"         # qBittorrent WebUI (mapped from default)
+        ["flaresolverr"]="8191"        # FlareSolverr API
+        ["tdarr"]="8265"               # Tdarr WebUI
+        ["portainer"]="9000"           # Portainer WebUI
+        ["ddns-updater"]="8310"        # DDNS-Updater WebUI
+        ["heimdall"]="2080"            # Heimdall WebUI
+        ["homarr"]="3200"              # Homarr WebUI
+        ["homepage"]="3000"            # Homepage WebUI
+        ["plex"]="32400"               # Plex WebUI
+        ["swag"]="443"                 # SWAG HTTPS
+        ["authelia"]="9091"            # Authelia WebUI
+        ["unpackerr"]=""               # No WebUI port
+    )
+    
+    # Get list of running MediaStack containers
+    local containers
+    if [[ -n "$service_name" ]]; then
+        # Check specific service
+        if sudo docker ps --format "{{.Names}}" | grep -q "^${service_name}$"; then
+            containers="$service_name"
+        else
+            echo -e "${RED}✗ Container '$service_name' is not running${NC}"
+            return 1
+        fi
+    else
+        # Check all MediaStack containers
+        containers=$(sudo docker ps --format "{{.Names}}" | grep -E "(gluetun|bazarr|jellyfin|jellyseerr|lidarr|mylar|plex|portainer|prowlarr|qbittorrent|radarr|readarr|sabnzbd|sonarr|swag|tdarr|unpackerr|whisparr|flaresolverr|homarr|homepage|heimdall|ddns-updater|authelia|filebot)")
+    fi
+    
+    if [[ -z "$containers" ]]; then
+        echo -e "${YELLOW}ℹ No MediaStack containers are currently running.${NC}"
+        return 0
+    fi
+    
+    local healthy_count=0
+    local unhealthy_count=0
+    local total_count=0
+    
+    # Check each container
+    while IFS= read -r container; do
+        if [[ -n "$container" ]]; then
+            ((total_count++))
+            
+            # Get container status
+            local status=$(sudo docker inspect "$container" --format '{{.State.Status}}' 2>/dev/null)
+            local health=$(sudo docker inspect "$container" --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}no-health-check{{end}}' 2>/dev/null)
+            
+            # Get port for this service
+            local port="${service_ports[$container]}"
+            
+            echo -e "${BLUE}Checking $container...${NC}"
+            
+            # Check container status
+            if [[ "$status" == "running" ]]; then
+                echo -e "  ${GREEN}✓ Container: Running${NC}"
+                
+                # Check Docker health if available
+                if [[ "$health" != "no-health-check" ]]; then
+                    if [[ "$health" == "healthy" ]]; then
+                        echo -e "  ${GREEN}✓ Docker Health: Healthy${NC}"
+                    else
+                        echo -e "  ${YELLOW}⚠ Docker Health: $health${NC}"
+                    fi
+                fi
+                
+                # Check HTTP service if port is defined
+                if [[ -n "$port" ]]; then
+                    # First check if port is open
+                    if timeout 3 bash -c "</dev/tcp/localhost/$port" 2>/dev/null; then
+                        echo -e "  ${GREEN}✓ Port $port: Open${NC}"
+                        
+                        # Now test HTTP response
+                        local http_status
+                        if [[ "$port" == "443" ]]; then
+                            # HTTPS for SWAG
+                            http_status=$(timeout 5 curl -k -s -o /dev/null -w "%{http_code}" "https://localhost:$port/" 2>/dev/null || echo "000")
+                        else
+                            # HTTP for most services
+                            http_status=$(timeout 5 curl -s -o /dev/null -w "%{http_code}" "http://localhost:$port/" 2>/dev/null || echo "000")
+                        fi
+                        
+                        # Check if we got a valid HTTP response
+                        case "$http_status" in
+                            200|302|401|403)
+                                # Common successful responses:
+                                # 200 = OK, 302 = Redirect (login page), 401 = Auth required, 403 = Forbidden but working
+                                echo -e "  ${GREEN}✓ HTTP $port: WebUI responding (${http_status})${NC}"
+                                ((healthy_count++))
+                                ;;
+                            000)
+                                echo -e "  ${RED}✗ HTTP $port: No response from WebUI${NC}"
+                                ((unhealthy_count++))
+                                ;;
+                            5*)
+                                # 5xx = Server errors
+                                echo -e "  ${RED}✗ HTTP $port: Server error (${http_status})${NC}"
+                                ((unhealthy_count++))
+                                ;;
+                            404)
+                                echo -e "  ${YELLOW}⚠ HTTP $port: Service may be starting (${http_status})${NC}"
+                                ((unhealthy_count++))
+                                ;;
+                            *)
+                                echo -e "  ${YELLOW}⚠ HTTP $port: Unexpected response (${http_status})${NC}"
+                                ((unhealthy_count++))
+                                ;;
+                        esac
+                    else
+                        echo -e "  ${RED}✗ Port $port: Not responding${NC}"
+                        ((unhealthy_count++))
+                    fi
+                else
+                    echo -e "  ${BLUE}ℹ Port: No WebUI port defined${NC}"
+                    ((healthy_count++))
+                fi
+            else
+                echo -e "  ${RED}✗ Container: $status${NC}"
+                echo -e "  ${RED}✗ Port: Container not running${NC}"
+                ((unhealthy_count++))
+            fi
+            
+            echo ""
+        fi
+    done <<< "$containers"
+    
+    # Summary
+    echo -e "${BLUE}Health Check Summary:${NC}"
+    echo "===================="
+    echo -e "${GREEN}Healthy services: $healthy_count${NC}"
+    if [[ $unhealthy_count -gt 0 ]]; then
+        echo -e "${RED}Unhealthy services: $unhealthy_count${NC}"
+    fi
+    echo -e "${BLUE}Total checked: $total_count${NC}"
+    
+    if [[ $unhealthy_count -eq 0 ]]; then
+        echo -e "${GREEN}🎉 All services are healthy!${NC}"
+        return 0
+    else
+        echo -e "${YELLOW}⚠ Some services need attention.${NC}"
+        return 1
+    fi
+}
+
 # Function to restart all services
 restart_all_services() {
     echo -e "${YELLOW}Restarting all MediaStack services...${NC}"
@@ -339,6 +505,14 @@ case "$1" in
         echo -e "${BLUE}MediaStack services status:${NC}"
         "$SCRIPT_DIR/status.sh"
         exit 0
+        ;;
+    health)
+        check_health "$2"
+        exit $?
+        ;;
+    health)
+        check_health "$2"
+        exit $?
         ;;
 esac
 
@@ -451,6 +625,14 @@ case "$command" in
             "$SCRIPT_DIR/logs.sh"
         fi
         ;;
+    health)
+        check_health "$service_name"
+        exit $?
+        ;;
+    health)
+        check_health "$service_name"
+        exit $?
+        ;;
     *)
         echo -e "${BLUE}MediaStack Unified Management Script${NC}"
         echo "======================================="
@@ -481,10 +663,13 @@ case "$command" in
         echo "  stop <service>         - Stop individual service"
         echo "  restart <service>      - Restart individual service"
         echo "  logs <service>         - Show logs for individual service"
+        echo "  health <service>       - Check health for individual service"
         echo ""
         echo -e "${GREEN}Monitoring:${NC}"
         echo "  logs                   - Show logs for all services (Ctrl+C to exit)"
         echo "  status                 - Show status of all services"
+        echo "  health [service]       - Check health of all or specific service (container + port)"
+        echo "  health [service]       - Check health of all or specific service (container + port)"
         echo "  list                   - List all available services"
         echo ""
         echo -e "${YELLOW}Examples:${NC}"
@@ -496,6 +681,8 @@ case "$command" in
         echo "  $0 restart-all --all   - Stop all, start ALL services"
         echo "  $0 remove-all          - Remove ALL containers"
         echo "  $0 logs jellyfin       - Show Jellyfin logs"
+        echo "  $0 health              - Check health of all running services"
+        echo "  $0 health prowlarr     - Check health of Prowlarr only"
         echo ""
         echo -e "${YELLOW}First time setup:${NC}"
         echo "1. $0 setup"
