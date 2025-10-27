@@ -1,9 +1,21 @@
 Reference Video Guide: https://youtu.be/N--e1O5SqPw
 
 https://MediaStack.Guide
-https://github.com/geekau/mediastack
+https://github.com/geekau/mediastack (Original Project)
+https://github.com/abd-almofleh/media-stack (Enhanced Management System)
 https://docs.docker.com/engine/install/ubuntu/
 https://github.com/winsw/winsw
+
+########################################################################################
+#                     MEDIASTACK - ENHANCED MANAGEMENT SYSTEM                        #
+#                    Complete Installation Guide for Windows 11                       #
+########################################################################################
+
+This guide shows you how to install MediaStack with the Enhanced Management System
+that provides unified control, health monitoring, and selective service management.
+
+Original MediaStack by: geekau (https://github.com/geekau/mediastack)
+Enhanced Management by: abd-almofleh (https://github.com/abd-almofleh/media-stack)
 
 
 
@@ -122,102 +134,156 @@ mkdir D:\MediaStack\AppData
 
 
 #####################################################################################
-#                   FOLLOW MEDIASTACK GUIDE FROM GITHUB REPO                        #
+#              INSTALL MEDIASTACK WITH ENHANCED MANAGEMENT SYSTEM                   #
 #####################################################################################
 
-# Goto:   https://github.com/geekau/mediastack
+# Clone the Enhanced MediaStack repository
+cd /mnt/d/MediaStack
+git clone https://github.com/abd-almofleh/media-stack.git AppData
+cd AppData
 
-# Download YAML / ENV files into D:/MediaStack/AppData directory
+# OR Download files manually from:
+# Original: https://github.com/geekau/mediastack
+# Enhanced: https://github.com/abd-almofleh/media-stack
 
-# Edit docker-compose.env file
+# Edit docker-compose.env file with your settings
+nano docker-compose.env
 
-#### Create MediaStack working directories
+# Set your folder paths (update these to match your setup):
+# FOLDER_FOR_MEDIA=/mnt/d/MediaStack/Media
+# FOLDER_FOR_DATA=/mnt/d/MediaStack/AppData/data
 
-export FOLDER_FOR_MEDIA=/mnt/d/MediaStack/Media
-export FOLDER_FOR_DATA=/mnt/d/MediaStack/AppData
+#####################################################################################
+#                    MEDIASTACK ENHANCED SETUP - ONE COMMAND!                       #
+#####################################################################################
 
-export PUID=1000
-export PGID=1000
+# The Enhanced Management System simplifies everything to just a few commands:
 
-sudo -E mkdir -p $FOLDER_FOR_DATA/{authelia/assets,bazarr,ddns-updater,gluetun,heimdall,homarr/{configs,data,icons},homepage,jellyfin,jellyseerr,lidarr,mylar,plex,portainer,prowlarr,qbittorrent,radarr,readarr,sabnzbd,sonarr,swag,tdarr/{server,configs,logs},tdarr_transcode_cache,unpackerr,whisparr}
-sudo -E mkdir -p $FOLDER_FOR_MEDIA/media/{anime,audio,books,comics,movies,music,photos,tv,xxx}
-sudo -E mkdir -p $FOLDER_FOR_MEDIA/usenet/{anime,audio,books,comics,complete,console,incomplete,movies,music,prowlarr,software,tv,xxx}
-sudo -E mkdir -p $FOLDER_FOR_MEDIA/torrents/{anime,audio,books,comics,complete,console,incomplete,movies,music,prowlarr,qbittorrent,software,tv,xxx}
-sudo -E mkdir -p $FOLDER_FOR_MEDIA/watch
-sudo -E mkdir -p $FOLDER_FOR_MEDIA/filebot/{input,output}
-sudo -E chmod -R 775 $FOLDER_FOR_MEDIA $FOLDER_FOR_DATA
-sudo -E chown -R $PUID:$PGID $FOLDER_FOR_MEDIA $FOLDER_FOR_DATA
+# 1. FIRST TIME SETUP (Creates directories, downloads images, starts all services)
+./mediastack.sh setup
+./mediastack.sh pull
+./mediastack.sh start-all
 
+# That's it! The enhanced system handles:
+# ✅ Automatic directory creation with proper permissions
+# ✅ Intelligent service startup (Gluetun first, then others)
+# ✅ Error handling and progress feedback
+# ✅ Colored output for easy reading
 
+#####################################################################################
+#                        ENHANCED MANAGEMENT COMMANDS                               #
+#####################################################################################
 
-# Download all of the Docker images needed for each YAML file
-for file in *.yaml; do
-  echo "Pulling Docker image for $file..."
-  sudo docker compose --file "$file" --env-file docker-compose.env pull
-done
+# Check status of all services with health monitoring
+./mediastack.sh status
 
+# Advanced health check with HTTP testing
+./mediastack.sh health
 
+# View logs for specific service
+./mediastack.sh logs jellyfin
 
-# GLUETUN MUST BE THE FIRST CONTAINER CREATED - IT SETS UP DOCKER NETWORK AND VPN
-sudo docker compose --file docker-compose-gluetun.yaml      --env-file docker-compose.env up -d
+# Individual service management
+./mediastack.sh start prowlarr
+./mediastack.sh stop radarr
+./mediastack.sh restart jellyfin
 
+# Bulk operations
+./mediastack.sh start-all    # Start all services (Gluetun first)
+./mediastack.sh stop-all     # Stop all services
+./mediastack.sh restart-all  # Full restart with container recreation
 
-sudo docker compose --file docker-compose-qbittorrent.yaml  --env-file docker-compose.env up -d
-sudo docker compose --file docker-compose-sabnzbd.yaml      --env-file docker-compose.env up -d
+# Service updates
+./mediastack.sh update       # Pull latest images and restart services
 
-sudo docker compose --file docker-compose-prowlarr.yaml     --env-file docker-compose.env up -d
-sudo docker compose --file docker-compose-lidarr.yaml       --env-file docker-compose.env up -d
-sudo docker compose --file docker-compose-mylar.yaml        --env-file docker-compose.env up -d
-sudo docker compose --file docker-compose-radarr.yaml       --env-file docker-compose.env up -d
-sudo docker compose --file docker-compose-readarr.yaml      --env-file docker-compose.env up -d
-sudo docker compose --file docker-compose-sonarr.yaml       --env-file docker-compose.env up -d
-sudo docker compose --file docker-compose-whisparr.yaml     --env-file docker-compose.env up -d
-sudo docker compose --file docker-compose-bazarr.yaml       --env-file docker-compose.env up -d
+# List all available services
+./mediastack.sh list
 
-sudo docker compose --file docker-compose-jellyfin.yaml     --env-file docker-compose.env up -d
-sudo docker compose --file docker-compose-jellyseerr.yaml   --env-file docker-compose.env up -d
+# Get help
+./mediastack.sh help
 
-sudo docker compose --file docker-compose-homarr.yaml       --env-file docker-compose.env up -d
-sudo docker compose --file docker-compose-homepage.yaml     --env-file docker-compose.env up -d
-sudo docker compose --file docker-compose-heimdall.yaml     --env-file docker-compose.env up -d
+#####################################################################################
+#                      SELECTIVE SERVICE MANAGEMENT (WHITELIST)                     #
+#####################################################################################
 
-sudo docker compose --file docker-compose-flaresolverr.yaml --env-file docker-compose.env up -d
-sudo docker compose --file docker-compose-unpackerr.yaml    --env-file docker-compose.env up -d
-sudo docker compose --file docker-compose-tdarr.yaml        --env-file docker-compose.env up -d
+# Create a whitelist to control which services are managed by bulk operations
+echo "gluetun prowlarr radarr sonarr jellyfin qbittorrent" > services.whitelist
 
-sudo docker compose --file docker-compose-portainer.yaml    --env-file docker-compose.env up -d
-sudo docker compose --file docker-compose-filebot.yaml      --env-file docker-compose.env up -d
+# Now bulk operations only affect whitelisted services:
+./mediastack.sh start-all    # Only starts services in whitelist
+./mediastack.sh restart-all  # Only restarts whitelisted services
 
-sudo docker compose --file docker-compose-swag.yaml         --env-file docker-compose.env up -d
-sudo docker compose --file docker-compose-authelia.yaml     --env-file docker-compose.env up -d
-sudo docker compose --file docker-compose-ddns-updater.yaml --env-file docker-compose.env up -d
+# Individual commands still work on all services:
+./mediastack.sh start plex   # Works regardless of whitelist
+
+#####################################################################################
+#                             WHAT THE ENHANCED SYSTEM PROVIDES                     #
+#####################################################################################
+
+# ✅ UNIFIED MANAGEMENT - Single script for all operations
+# ✅ HEALTH MONITORING - Real HTTP health checks, not just container status
+# ✅ SMART ORCHESTRATION - Gluetun dependency handling automatic
+# ✅ SELECTIVE CONTROL - Whitelist system for managing specific services
+# ✅ ERROR HANDLING - Robust error checking and user feedback
+# ✅ ORGANIZED STRUCTURE - Clean separation of scripts, compose files, data
+# ✅ COLORED OUTPUT - Easy-to-read status messages
+# ✅ AUTOMATIC SETUP - Directory creation with proper permissions
 
 
 
 
 #####################################################################################
-#                    SETTING WSL TO RUN AS WINDOWS SERVICE                          #
+#                AUTOMATED WSL WINDOWS SERVICE SETUP (RECOMMENDED)                  #
 #####################################################################################
 
-###
-### WARNING - WSL - WILL NOT run as System Service, it must be run with general user account details, which MUST have a password on the account.
-###
+# The Enhanced MediaStack includes automated WSL service setup!
+
+# OPTION 1: AUTOMATED SETUP (EASIEST - RECOMMENDED)
+# ================================================
+
+# 1. Navigate to the windows-service directory (in Windows Explorer)
+# Location: D:\MediaStack\AppData\windows-service\
+
+# 2. Right-click on "install-wsl-service.bat" 
+# 3. Select "Run as administrator"
+
+# The automated installer will:
+# ✅ Download Windows Service Wrapper automatically
+# ✅ Create proper service configuration
+# ✅ Install WSL MediaStack service
+# ✅ Configure automatic startup
+# ✅ Provide easy management tools
+
+# ✅ Install WSL Ubuntu Monitoring service
+# ✅ Configure automatic startup
+
+# 4. After installation, configure service credentials:
+#    - Open Services (Win+R → services.msc)
+#    - Find "WSL Ubuntu Monitoring Service"
+#    - Right-click → Properties → Log On tab
+#    - Select "This account" and enter your Windows username/password
+#    - Your Windows account MUST have a password!
+
+# 5. Use "manage-service.bat" for ongoing service management
+
+#####################################################################################
+#                    MANUAL WSL SERVICE SETUP (ADVANCED USERS)                      #
+#####################################################################################
+
+### WARNING - WSL must run with user account details that have a password ###
+
+# If you prefer manual setup or the automated script doesn't work:
 
 # Download Windows Service Wrapper - https://github.com/winsw/winsw/releases
-# Copy WinSW-x64.exe to D:\MediaStack and rename "wsl-monitoring.exe"
-# Create and edit D:\MediaStack\wsl-monitoring.xml
-
-D:
-cd D:\MediaStack
-
-# EDIT wsl-monitoring.xml
+# Copy WinSW-x64.exe to {YOUR_MEDIASTACK_DIR}\windows-service\ and rename "wsl-ubuntu-monitoring.exe"
+# Create {YOUR_MEDIASTACK_DIR}\windows-service\wsl-ubuntu-monitoring.xml:
 
 <service>
-  <id>wsl-monitoring</id>
-  <name>WSL Monitoring Service</name>
-  <description>This service checks if WSL is running on system start up, and ensures the service remains active for WSL projects to run as services.</description>
+  <id>wsl-ubuntu-monitoring</id>
+  <name>WSL Ubuntu Monitoring Service</name>
+  <description>Monitors and maintains WSL Ubuntu instance for Docker operations. Ensures WSL stays active for container stacks and services.</description>
   <executable>C:\Program Files\WSL\wsl.exe</executable>
-  <startarguments>-d ubuntu</startarguments>
+  <startarguments>-d ubuntu --exec /bin/bash -c "echo 'WSL Ubuntu monitoring service started' && while true; do sleep 30; done"</startarguments>
   <priority>Normal</priority>
   <stoptimeout>30 sec</stoptimeout>
   <stopparentprocessfirst>true</stopparentprocessfirst>
@@ -225,40 +291,84 @@ cd D:\MediaStack
   <depend>Eventlog</depend>
   <waithint>30 sec</waithint>
   <sleeptime>1 sec</sleeptime>
+  <log mode="roll">
+    <sizeThreshold>10240</sizeThreshold>
+    <keepFiles>8</keepFiles>
+  </log>
 </service>
 
+# Install and start the service:
+cd {YOUR_MEDIASTACK_DIR}\windows-service\
+wsl-ubuntu-monitoring.exe install
+# Configure service credentials in Services (services.msc)
+wsl-ubuntu-monitoring.exe start
 
-# Install Windows Service Wrapper
+#####################################################################################
+#                           WSL SERVICE BENEFITS                                    #
+#####################################################################################
 
-wsl-monitoring install
+# ✅ AUTOMATIC STARTUP - WSL starts with Windows boot
+# ✅ BACKGROUND OPERATION - Works without user login  
+# ✅ DOCKER PERSISTENCE - Docker daemon stays active
+# ✅ UNIVERSAL SUPPORT - Works for MediaStack and other Docker projects
+# ✅ SERVICE MANAGEMENT - Standard Windows service controls
+# ✅ LOGGING - Service logs for troubleshooting
+# ✅ EASY MANAGEMENT - Batch scripts for common operations
 
-# Open Services and change WSL Monitoring to run as your user credentials
-
-wsl-monitoring start
-
-##### - Windows service will fail if there is now password on the Windows user account
+# After setup and reboot, test with:
+# ./mediastack.sh status
+# ./mediastack.sh health
 
 
 #####################################################################################
-#          DOWNLOAD LATEST DOCKER IMAGES AND UPDATE ALL RUNNING CONTAINERS          #
+#                       UPDATING MEDIASTACK - ENHANCED METHOD                       #
 #####################################################################################
 
+# The Enhanced System makes updates simple and safe:
 
-# Download all of the Docker images needed for each YAML file
-for file in *.yaml; do
-  echo "Pulling Docker image for $file..."
-  sudo docker compose --file "$file" --env-file docker-compose.env pull
-done
+# Update all services to latest Docker images
+./mediastack.sh update
 
+# This single command:
+# ✅ Downloads latest Docker images for all services
+# ✅ Recreates containers with new images
+# ✅ Handles Gluetun dependency automatically
+# ✅ Preserves all data and configurations
+# ✅ Provides progress feedback and error handling
 
-# Start Gluetun container first, then start all other MediaStack containers
-sudo docker compose --file docker-compose-gluetun.yaml --env-file docker-compose.env up -d --force-recreate
-for file in *.yaml; do
-  if [[ "$file" != "docker-compose-gluetun.yaml" ]]; then
-    echo "Recreating Docker container for $file..."
-    sudo docker compose --file "$file" --env-file docker-compose.env up -d --force-recreate
-  fi
-done
+# Alternative update methods:
+./mediastack.sh pull        # Just download images, don't restart
+./mediastack.sh restart-all # Restart all with existing images
+
+# Update specific services only:
+./mediastack.sh restart jellyfin
+./mediastack.sh restart radarr
+
+#####################################################################################
+#                          MONITORING AND TROUBLESHOOTING                           #
+#####################################################################################
+
+# Check overall system status
+./mediastack.sh status
+
+# Advanced health check with HTTP testing
+./mediastack.sh health
+# Example output:
+# ✅ gluetun: Running (VPN connected)
+# ✅ prowlarr: Running + HTTP accessible (http://192.168.1.100:9696)
+# ❌ radarr: Running but HTTP not accessible (port 7878)
+# ⚠️  jellyfin: Container stopped
+
+# View logs for troubleshooting
+./mediastack.sh logs gluetun     # Check VPN connection
+./mediastack.sh logs prowlarr    # Check indexer issues
+./mediastack.sh logs jellyfin    # Check media server issues
+
+# Check which services are configured
+./mediastack.sh list
+
+# Show current whitelist (if using selective management)
+cat services.whitelist
 
 
 
@@ -267,15 +377,64 @@ done
 #                               WHAT TO DO NEXT?                                    #
 #####################################################################################
 
+# 1. VERIFY YOUR INSTALLATION
+./mediastack.sh health    # Check all services are running and accessible
 
-Import the Bookmarks for the application into your web browser
+# 2. ACCESS YOUR APPLICATIONS
+# Import the bookmarks for applications into your web browser
+# Access applications at: http://YOUR_SERVER_IP:PORT
+# Example: http://192.168.1.100:9696 for Prowlarr
 
-Before adding media to /mediastack/media folders:
+# 3. CONFIGURE YOUR MEDIA STACK
+# Set up indexers in Prowlarr first
+# Configure download clients (qBittorrent, SABnzbd)
+# Set up media managers (*ARR applications)
+# Configure media servers (Jellyfin/Plex)
 
-	Use Filebot to organise and rename your media (Optional)
-	Set up the file naming standards in the media applications (Radarr, Sonarr etc..)
+# 4. OPTIONAL ENHANCEMENTS
+# Set up Filebot for media organization:
+./mediastack.sh logs filebot
 
-Continue application configurations at: https://MediaStack.Guide
+# Configure selective service management:
+echo "gluetun prowlarr radarr sonarr jellyfin" > services.whitelist
+
+# 5. DAILY OPERATIONS
+./mediastack.sh status      # Check system status
+./mediastack.sh health      # Comprehensive health check
+./mediastack.sh logs [app]  # Troubleshoot specific issues
+./mediastack.sh update      # Keep services updated
+
+#####################################################################################
+#                              ENHANCED SYSTEM BENEFITS                             #
+#####################################################################################
+
+# OLD WAY (Manual):
+# - 20+ individual docker compose commands
+# - Manual dependency management (Gluetun first)
+# - No health checking beyond container status
+# - Complex update procedures
+# - Error-prone bulk operations
+
+# NEW WAY (Enhanced):
+# - Single command operations: ./mediastack.sh start-all
+# - Automatic dependency handling
+# - Real HTTP health checks
+# - Simple updates: ./mediastack.sh update
+# - Selective service management with whitelist
+# - Colored output and progress feedback
+# - Robust error handling
+
+#####################################################################################
+#                              CONTINUE LEARNING                                    #
+#####################################################################################
+
+# Original MediaStack Documentation: https://github.com/geekau/mediastack
+# Enhanced Management Documentation: https://github.com/abd-almofleh/media-stack
+# MediaStack Community: https://MediaStack.Guide
+# Support Forums: https://www.reddit.com/r/MediaStack/
+
+# For VPN setup, remote access, and advanced configurations,
+# see the complete documentation in the original repository.
 
 
 

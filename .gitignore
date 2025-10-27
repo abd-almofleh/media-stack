@@ -3,3 +3,11 @@ data/
 
 # Ignore environment files with sensitive data
 *.env
+
+# Ignore log files
+logs/
+*.log
+
+# Ignore Windows service files
+windows-service/wsl-ubuntu-monitoring.exe
+windows-service/wsl-ubuntu-monitoring.xml
