@@ -16,6 +16,8 @@ services:
     volumes:
       - ${FOLDER_FOR_DATA:?err}/sonarr:/config
       - ${FOLDER_FOR_MEDIA:?err}:/data
+      - ${FOLDER_FOR_MEDIA:?err}/torrents:/downloads
+
     environment:
       - PUID=${PUID:?err}
       - PGID=${PGID:?err}
