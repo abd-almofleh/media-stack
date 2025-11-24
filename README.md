@@ -16,6 +16,68 @@ This enhanced version adds a **comprehensive management system** to the original
 - **✅ Code Quality Assurance** - Shellcheck-compliant scripts with proper error handling
 - **🎨 Enhanced User Experience** - Colored output, progress indicators, and detailed logging
 
+## What Applications Are Provided In MediaStack  
+
+Welcome to the MediaStack project! MediaStack is your ultimate solution for managing and streaming media collections with applications like Jellyfin and Plex. Using Docker, MediaStack containerises these media servers alongside *ARR applications (Radarr, Sonarr, Lidarr, etc.) for seamless media automation and management.  
+
+List of Docker applications configured in the MediaStack `docker-compose.yaml` file:  
+
+
+ </br>
+
+<center>
+
+| <center> Docker Application </center> | <center> Application Role </center> |  
+|--------------------|------------------|  
+| [Authentik](https://docs.goauthentik.io/docs/install-config/install/docker-compose) | Authentik is an open-source identity provider for SSO, MFA, and access control |  
+| [Bazarr](https://docs.linuxserver.io/images/docker-bazarr) | Bazarr automates the downloading of subtitles for Movies and TV Shows |  
+| [Chromium](https://docs.linuxserver.io/images/docker-chromium/) | Chromium is an an open-source web browser, allowing secure remote Internet browsing through your MediaStack |  
+| [CrowdSec](https://docs.crowdsec.net/u/getting_started/installation/docker/) | CrowdSec is an open-source, collaborative intrusion prevention system that detects and blocks malicious IPs |  
+| [DDNS-Updater](https://hub.docker.com/r/qmcgaw/ddns-updater) | DDNS-Updater automatically updates dynamic DNS records when your home Internet changes IP address |  
+| [Filebot](https://www.filebot.net/) | FileBot is a tool for renaming and organising media files using online metadata sources |  
+| [Flaresolverr](https://github.com/FlareSolverr/FlareSolverr) | Flaresolverr bypasses Cloudflare protection, allowing automated access to websites for scripts and bots |  
+| [Gluetun](https://github.com/qdm12/gluetun-wiki) | Gluetun routes network traffic through a VPN, ensuring privacy and security for Docker containers |  
+| [Grafana](http://docs.grafana.org/installation/docker/) | Grafana is an open-source analytics platform for visualising metrics, logs, and time-series data |  
+| [Guacamole](https://hub.docker.com/r/guacamole/guacamole) | Guacamole is a clientless remote desktop gateway supporting RDP, VNC, and SSH through a web browser |  
+| [Headplane](https://github.com/tale/headplane) | Headplane is a web-based user interface for managing Headscale, the self-hosted alternative to Tailscale |  
+| [Headscale](https://headscale.net/stable/) | Headscale is an open-source, self-hosted alternative to Tailscale's control server for managing WireGuard-based VPNs |  
+| [Heimdall](https://docs.linuxserver.io/images/docker-heimdall) | Heimdall provides a dashboard to easily access and organise web applications and services |  
+| [Homarr](https://homarr.dev/docs/getting-started/after-the-installation) | Homarr is a self-hosted, customisable dashboard for managing and monitoring your server applications |  
+| [Homepage](https://gethomepage.dev/latest/configs/) | Homepage is an alternate to Heimdall, providing a similar dashboard to easily access and organise web applications and services |  
+| [Huntarr](https://github.com/plexguide/Huntarr.io) | Huntarr is an open-source tool that automates finding missing and upgrading media in *ARR libraries |  
+| [Jellyfin](https://jellyfin.org/docs/general/administration/installing#docker) | Jellyfin is a media server that organises, streams, and manages multimedia content for users |  
+| [Jellyseerr](https://hub.docker.com/r/fallenbagel/jellyseerr) | Jellyseerr is a request management tool for Jellyfin, enabling users to request and manage media content |  
+| [Lidarr](https://docs.linuxserver.io/images/docker-lidarr) | Lidarr is a Library Manager, automating the management and meta data for your music media files |  
+| [Mylar](https://github.com/mylar3/mylar3/wiki) | Mylar3 is a Library Manager, automating the management and meta data for your comic media files |  
+| [Plex](https://hub.docker.com/r/linuxserver/plex) | Plex is a media server that organises, streams, and manages multimedia content across devices |  
+| [Portainer](https://docs.portainer.io/start/install/server/docker) | Portainer provides a graphical interface for managing Docker environments, simplifying container deployment and monitoring |  
+| [Postgresql](https://hub.docker.com/_/postgres) | PostgreSQL is a powerful, open-source relational database system known for reliability and advanced features |  
+| [Prometheus](https://prometheus.io/docs/introduction/overview/) | Prometheus is an open-source monitoring system that collects and queries metrics using a time-series database |  
+| [Prowlarr](https://docs.linuxserver.io/images/docker-prowlarr) | Prowlarr manages and integrates indexers for various media download applications, automating search and download processes |  
+| [qBittorrent](https://docs.linuxserver.io/images/docker-qbittorrent) | qBittorrent is a peer-to-peer file sharing application that facilitates downloading and uploading torrents |  
+| [Radarr](https://docs.linuxserver.io/images/docker-radarr) | Radarr is a Library Manager, automating the management and meta data for your Movie media files |  
+| [Readarr](https://docs.linuxserver.io/images/docker-readarr) | is a Library Manager, automating the management and meta data for your eBooks and Comic media files |  
+| [SABnzbd](https://docs.linuxserver.io/images/docker-sabnzbd) | SABnzbd is a Usenet newsreader that automates the downloading of binary files from Usenet |  
+| [Sonarr](https://docs.linuxserver.io/images/docker-sonarr) | Sonarr is a Library Manager, automating the management and meta data for your TV Shows (series) media files |  
+| [Tailscale](https://tailscale.com/) | Tailscale is a secure, peer-to-peer VPN that simplifies network access using WireGuard technology |  
+| [Tdarr](https://docs.tdarr.io/docs/installation/docker/run-compose/) | Tdarr automates the transcoding and management of media files to optimise storage and playback compatibility |  
+| [Traefik](https://doc.traefik.io/traefik/) | Traefik is a modern reverse proxy and load balancer for microservices and containerised applications with full TLS v1.2 & v1.3 support |  
+| [Traefik-Certs-Dumper](https://hub.docker.com/r/ldez/traefik-certs-dumper) | Traefik Certs Dumper extracts TLS certificates and private keys from Traefik and converts for use by other services |  
+| [Unpackerr](https://github.com/davidnewhall/unpackerr) | Unpackerr extracts and moves downloaded media files to their appropriate directories for organisation and access |  
+| [Valkey](https://hub.docker.com/r/valkey/valkey) | Valkey is an open-source, high-performance, in-memory key-value datastore, serving as a drop-in replacement for Redis |  
+| [Whisparr](https://wiki.servarr.com/whisparr) | Whisparr is a Library Manager, automating the management and meta data for your Adult media files |  
+
+</br></br>
+
+| <center>Ubuntu Linux Install - Docker Compose Build</center> | <center>Windows 11 Install - Docker with WSL and Ubuntu</center> |  
+|----------------------------------------|----------------------------------------|  
+| [![MediaStack - A Detailed Installation Walkthru (Ubuntu Linux)](https://i.ytimg.com/vi/zz2XjrurgXI/hq720.jpg)](https://youtu.be/zz2XjrurgXI "MediaStack - A Detailed Installation Walkthru (Ubuntu Linux)") | [![MediaStack - Ultimate Guide on Windows 11 Docker with WSL and Ubuntu](https://i.ytimg.com/vi/N--e1O5SqPw/hq720.jpg)](https://youtu.be/N--e1O5SqPw "MediaStack - Ultimate Guide on Windows 11 Docker with WSL and Ubuntu") |  
+
+</br>
+
+</center>
+
+
 ## Network Architecture - Full Download VPN Configuration
 
 This enhanced management system is specifically designed for the **"Full Download VPN"** configuration from the original MediaStack project. This setup routes all network traffic from Docker containers through the Gluetun VPN container for maximum privacy and security.
