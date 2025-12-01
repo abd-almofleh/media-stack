@@ -94,7 +94,10 @@ services:
       - HTTPPROXY=on
       - SHADOWSOCKS=on
       - PORT_FORWARD_ONLY=on
-
-# NOTE: Gluetun VPN container MUST ONLY connect to the mediastack
+      - EXTRA_SUBNETS=192.168.0.0/24
+      - DNS_UPSTREAM_RESOLVERS=google
+      - DOT_PROVIDERS=cloudflare,quad9
+      - DOT=on
+      
     networks:
       - mediastack
